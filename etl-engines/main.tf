@@ -1,3 +1,7 @@
+locals {
+  dataflow_worker_roles = ["roles/bigquery.admin", "roles/dataflow.worker", "roles/storage.objectAdmin"]
+}
+
 data "google_compute_subnetwork" "subnet" {
   self_link = var.shared_vpc_subnet_self_link
 }
@@ -36,28 +40,13 @@ module "dataflow_tempfile_bucket" {
   ]
 }
 
-# give the new dataflow working account the roles it needs. IAM analyze 1015701043581-compute@developer.gserviceaccount.com for an example.
-
-# project roles
-resource "google_project_iam_member" "dataflow_worker_project" {
-  project = var.project_id
-  role    = "roles/dataflow.worker"
-  member  = "serviceAccount:${google_service_account.dataflow_worker.email}"
+# Consolidate the 3 project roles below into one resource by using for_each iteration
+resource "google_project_iam_member" "dataflow_worker_roles" {
+  for_each = toset(local.dataflow_worker_roles)
+  project  = var.project_id
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.dataflow_worker.email}"
 }
-
-resource "google_project_iam_member" "dataflow_worker_storage" {
-  project = var.project_id
-  role    = "roles/storage.objectAdmin"
-  member  = "serviceAccount:${google_service_account.dataflow_worker.email}"
-}
-
-#give the dataflow worker the role required to access bigquery
-resource "google_project_iam_member" "dataflow_worker_bigquery" {
-  project = var.project_id
-  role    = "roles/bigquery.admin"
-  member  = "serviceAccount:${google_service_account.dataflow_worker.email}"
-}
-
 
 #Give the dataflow worker the role required to access secrets in secret manager
 resource "google_project_iam_member" "dataflow_worker_secrets_access" {
