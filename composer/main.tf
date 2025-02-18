@@ -49,7 +49,7 @@ data "google_compute_subnetwork" "shared_subnet" {
   name    = "ut-udot-shared-vpc-${var.environment}-subnet"
   region  = var.region
 }
-##### GCS BUCKETS #######
+##### GCS BUCKETS INFO #######
 module "gcs_dropzone_bucket" {
   source        = "../modules/storagebucket"
   project_id    = var.project_id
